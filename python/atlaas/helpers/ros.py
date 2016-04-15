@@ -35,16 +35,19 @@ def transformation(tflistener_or_tf2buffer, frame, header):
     if 'lookup_transform' in dir(tflistener_or_tf2buffer):
         # tf2 use lower_case_with_underscores (PEP8)
         # tf2 lookup_transform returns a geometry_msgs/TransformStamped Message
-        translation, rotation = tf2buffer.lookup_transform(frame,
-            header.frame_id, header.stamp, rospy.Duration(3)).transform
+        tf = tflistener_or_tf2buffer.lookup_transform(frame,
+            header.frame_id, header.stamp, rospy.Duration(3))
+        t, r = tf.transform.translation, tf.transform.rotation
+        translation = (t.x, t.y, t.z)
+        quaternion = (r.x, r.y, r.z, r.w)
     else:
         wait(tfl, frame, header)
         # we could use return tfl.asMatrix(frame, header)
         # tf lookupTransform returns a geometry_msgs/Transform Message
-        translation, rotation = tflistener_or_tf2buffer.lookupTransform(frame,
+        translation, quaternion = tflistener_or_tf2buffer.lookupTransform(frame,
             header.frame_id, header.stamp)
 
-    M = transformations.quaternion_matrix(rotation)
+    M = transformations.quaternion_matrix(quaternion)
     M[:3, 3] = translation[:3]
     return M
 
